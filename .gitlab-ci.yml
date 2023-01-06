@@ -1,3 +1,5 @@
+# see the repo on gitlab.com/sakib.alamin/ci-cd-demo for details
+
 variables:
   IMAGE_NAME: sakibalamin/ci-cd-demo
   IMAGE_TAG: v0.0.1
