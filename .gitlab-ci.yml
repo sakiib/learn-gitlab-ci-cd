@@ -1,0 +1,44 @@
+variables:
+  IMAGE_NAME: sakibalamin/ci-cd-demo
+  IMAGE_TAG: v0.0.1
+
+stages:
+  - test
+  - build
+  - deploy
+  
+Run Tests:
+  stage: test
+  image: golang:1.19.4-bullseye
+  before_script:
+    - apt-get update && apt-get install make
+  script:
+    - make test
+
+Build Image:
+  stage: build
+  image: docker:20.10.16
+  services:
+    - docker:20.10.16-dind
+  variables:
+    DOCKER_TLS_CERTDIR: ""
+  before_script:
+    - docker login -u $REGISTRY_USER -p $REGISTRY_PASSWORD
+  script:
+    - docker build -t $IMAGE_NAME:$IMAGE_TAG .
+    - docker push $IMAGE_NAME:$IMAGE_TAG
+
+Deploy on GKE:
+  stage: deploy
+  image: fedora
+  before_script:
+    - curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+    - sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+    - mkdir tmp
+    - cd tmp
+    - echo $KUBE_CONFIG | base64 -d > config
+    - export KUBECONFIG=$PWD/config
+    - cd ..
+  script:
+    - kubectl apply -f k8s
+    
